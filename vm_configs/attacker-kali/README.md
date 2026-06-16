@@ -61,7 +61,7 @@ graph TD
         Kali[Kali VM <br> 192.168.100.40]
     end
 
-    subgraph Mesh Subnet (192.168.100.0/24)
+    subgraph "Mesh Subnet (192.168.100.0/24)"
         Hub[Deception Hub <br> 192.168.100.20]
         Sac[Sacrificial VM <br> 192.168.100.30]
     end

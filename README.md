@@ -10,11 +10,11 @@ The lab is composed of three VirtualBox Virtual Machines (VMs) and a centralized
 
 ```mermaid
 graph TD
-    subgraph Windows Host (Docker)
+    subgraph "Windows Host (Docker)"
         ELK[ELK Stack <br> port 5055/5601/9200]
     end
 
-    subgraph Mesh Subnet (192.168.100.0/24)
+    subgraph "Mesh Subnet (192.168.100.0/24)"
         Kali[Attacker VM <br> 192.168.100.40]
         Hub[Deception Hub <br> 192.168.100.20]
         Sac[Sacrificial VM <br> 192.168.100.30]
