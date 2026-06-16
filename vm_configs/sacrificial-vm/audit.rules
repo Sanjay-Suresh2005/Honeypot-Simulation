@@ -1,0 +1,38 @@
+# Auditd Custom Rules for Sacrificial VM
+# Path: /etc/audit/rules.d/audit.rules
+
+# First, delete all existing rules
+-D
+
+# Buffer size configuration
+-b 8192
+
+# Failure mode: log a message on buffer overflows
+-f 1
+
+# ─── Canary File Watchers (T1083) ───
+# Monitor read (r), write (w), attribute change (a), execute (x) on canary files
+-w /home/admin/.aws/credentials -p rwa -k canary_aws_access
+-w /home/admin/2026_Financial_Forecast.xlsx -p rwa -k canary_finance_access
+
+# ─── Data Staging Command Execution Watchers (T1074) ───
+# Monitor execution (x) of archiving/compression utilities
+-w /usr/bin/tar -p x -k staging_archive_exec
+-w /usr/bin/zip -p x -k staging_archive_exec
+-w /usr/bin/unzip -p x -k staging_archive_exec
+-w /usr/bin/gzip -p x -k staging_archive_exec
+-w /usr/bin/gunzip -p x -k staging_archive_exec
+-w /usr/bin/7z -p x -k staging_archive_exec
+
+# Monitor execution of tools inside /tmp
+-w /tmp -p x -k tmp_execution
+
+# ─── Exfiltration & Lateral Movement Watchers (T1048, T1021) ───
+# Monitor scp/sftp execution
+-w /usr/bin/scp -p x -k exfil_scp
+-w /usr/bin/sftp -p x -k exfil_sftp
+-w /usr/bin/rsync -p x -k exfil_rsync
+
+# Make rules immutable (forces a reboot to change rules)
+# Uncomment the line below for high-security hardening
+# -e 2

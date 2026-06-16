@@ -1,0 +1,82 @@
+version: "3.8"
+
+# ─────────────────────────────────────────────
+#  Deception Lab — SOC Backend
+#  Windows Host / Docker Desktop
+#
+#  Folder structure expected:
+#  deception-lab/
+#  ├── docker-compose.yml        ← this file
+#  ├── .env                      ← API keys (never commit this)
+#  └── logstash/
+#      └── pipeline/
+#          └── logstash.conf
+# ─────────────────────────────────────────────
+
+services:
+
+  # ── Elasticsearch ──────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.1
+    container_name: soc-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g        # keep at 1g — you need RAM for VMs
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u \"elastic:$${ELASTIC_PASSWORD:-changeme}\" http://localhost:9200/ | grep -q tagline || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Kibana ─────────────────────────────────
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.4.1
+    container_name: soc-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD:-changeme}
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY:-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6}
+      - XPACK_SECURITY_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY:-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6}
+      - XPACK_REPORTING_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY:-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6}
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Logstash ───────────────────────────────
+  logstash:
+    image: docker.elastic.co/logstash/logstash:9.4.1
+    container_name: soc-logstash
+    ports:
+      - "5055:5055"    # Incoming logs from VMs (Cowrie, Auditd, Sysmon-Linux)
+                       # Filebeat on each VM points here
+                       # Bind address: 192.168.56.1:5055 (host-only adapter)
+    environment:
+      # ── TI API keys — set these in your .env file ──
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - OTX_API_KEY=${OTX_API_KEY}
+      # ── Elastic auth ──
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+    volumes:
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logstash/pipeline/mitre_map.yml:/usr/share/logstash/mitre_map.yml
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  esdata:
+    name: soc-esdata    # named volume so data survives container restarts

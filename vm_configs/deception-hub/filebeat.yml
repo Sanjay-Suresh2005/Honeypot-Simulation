@@ -1,0 +1,52 @@
+# Filebeat Configuration for Deception Hub VM
+# Path: /etc/filebeat/filebeat.yml
+
+filebeat.inputs:
+  # ─── Cowrie SSH Honeypot Logs ───
+  - type: filestream
+    id: cowrie-ssh-honeypot
+    enabled: true
+    paths:
+      - /var/log/cowrie/cowrie.json
+    parsers:
+      - ndjson:
+          target: ""
+          overwrite_keys: true
+    fields:
+      event.dataset: "cowrie"
+      tags: ["honeypot_data"]
+
+  # ─── OpenCanary Logs ───
+  - type: filestream
+    id: opencanary-honeypot
+    enabled: true
+    paths:
+      - /var/log/opencanary.log
+    parsers:
+      - ndjson:
+          target: ""
+          overwrite_keys: true
+    fields:
+      event.dataset: "opencanary"
+      tags: ["honeypot_data"]
+
+  # ─── Manual Decoy Scan Logs (Syslog) ───
+  - type: filestream
+    id: system-syslog-decoys
+    enabled: true
+    paths:
+      - /var/log/syslog
+    include_lines: ['DECOY_SCAN:']
+    fields:
+      event.dataset: "decoy-scan"
+      tags: ["honeypot_data"]
+
+# Ensure custom fields are placed at root
+fields_under_root: true
+
+# ─── Logstash Output ───
+output.logstash:
+  hosts: ["192.168.56.1:5055"]
+  # Keep connection retries and backoff resilient
+  backoff.init: 1s
+  backoff.max: 60s

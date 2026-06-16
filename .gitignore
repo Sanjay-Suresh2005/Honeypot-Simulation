@@ -1,0 +1,4 @@
+.env
+*.log
+logstash/pipeline/*.conf.bak
+*.mp4

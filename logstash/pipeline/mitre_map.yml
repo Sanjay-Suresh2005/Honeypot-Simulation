@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Deception Lab — MITRE ATT&CK Translation Dictionary
+#  Path: logstash/pipeline/mitre_map.yml
+# ─────────────────────────────────────────────────────────────────────────────
+
+# --- Auditd Mappings (Based on audit.key) ---
+"canary_aws_access": "Discovery|T1083|File and Directory Discovery"
+"canary_finance_access": "Discovery|T1083|File and Directory Discovery"
+"staging_archive_exec": "Collection|T1074|Data Staging"
+"exfil_scp": "Exfiltration|T1048|Exfiltration Over Alternative Protocol"
+
+# --- Cowrie Mappings (Based on eventid) ---
+"cowrie.login.failed": "Credential Access|T1110|Brute Force"
+"cowrie.login.success": "Initial Access|T1078|Valid Accounts"
+"cowrie.command.input": "Execution|T1059|Command and Scripting Interpreter"
+
+# --- OpenCanary Mappings (Based on dst_port helper key) ---
+"port_445": "Lateral Movement|T1021.002|SMB/Windows Admin Shares"
+"port_139": "Lateral Movement|T1021.002|SMB/Windows Admin Shares"
+"port_80": "Reconnaissance|T1595|Active Scanning"
+"port_8080": "Reconnaissance|T1595|Active Scanning"
+"port_21": "Reconnaissance|T1595|Active Scanning"
+"port_1433": "Credential Access|T1110|Brute Force"

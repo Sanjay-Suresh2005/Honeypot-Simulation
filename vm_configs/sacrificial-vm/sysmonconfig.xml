@@ -1,0 +1,40 @@
+<Sysmon schemaversion="4.81">
+  <EventFiltering>
+    <!-- ─── Process Create (Event ID 1) ─── -->
+    <RuleGroup groupRelation="or">
+      <ProcessCreate onmatch="exclude">
+        <!-- Exclude noisy Filebeat process creations -->
+        <Image condition="contains">filebeat</Image>
+      </ProcessCreate>
+      <ProcessCreate onmatch="include">
+        <!-- Log all process executions by default -->
+        <CommandLine condition="contains"> </CommandLine>
+      </ProcessCreate>
+    </RuleGroup>
+
+    <!-- ─── Network Connect (Event ID 3) ─── -->
+    <RuleGroup groupRelation="or">
+      <NetworkConnect onmatch="exclude">
+        <!-- Exclude Filebeat's outbound connections to Logstash to break the feedback loop -->
+        <Image condition="contains">filebeat</Image>
+        <DestinationPort condition="is">5055</DestinationPort>
+      </NetworkConnect>
+    </RuleGroup>
+
+    <RuleGroup groupRelation="and">
+      <NetworkConnect onmatch="include">
+        <!-- Log all outbound/inbound network connections -->
+        <DestinationIp condition="is not">127.0.0.1</DestinationIp>
+        <DestinationIp condition="is not">::1</DestinationIp>
+      </NetworkConnect>
+    </RuleGroup>
+    
+    <!-- ─── File Create (Event ID 11) ─── -->
+    <RuleGroup groupRelation="or">
+      <FileCreate onmatch="include">
+        <!-- Log file creations in /tmp representing staging -->
+        <TargetFilename condition="begin with">/tmp/</TargetFilename>
+      </FileCreate>
+    </RuleGroup>
+  </EventFiltering>
+</Sysmon>

@@ -1,0 +1,35 @@
+# Filebeat Configuration for Sacrificial VM
+# Path: /etc/filebeat/filebeat.yml
+
+filebeat.inputs:
+  # ─── Auditd Syscall Logs ───
+  - type: filestream
+    id: sacrificial-auditd
+    enabled: true
+    paths:
+      - /var/log/audit/audit.log
+    fields:
+      event.dataset: "auditd"
+      tags: ["honeypot_data"]
+
+  # ─── Sysmon for Linux Logs ───
+  # Sysmon logs to the system log (syslog) with a distinct tag
+  - type: filestream
+    id: sacrificial-sysmon
+    enabled: true
+    paths:
+      - /var/log/syslog
+    include_lines: ['.*sysmon.*', '.*Sysmon.*']
+    exclude_lines: ['.*filebeat.*', '.*:5055.*']
+    fields:
+      event.dataset: "sysmon"
+      tags: ["honeypot_data"]
+
+# Ensure custom fields are placed at root
+fields_under_root: true
+
+# ─── Logstash Output ───
+output.logstash:
+  hosts: ["192.168.56.1:5055"]
+  backoff.init: 1s
+  backoff.max: 60s
